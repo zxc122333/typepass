@@ -1,64 +1,86 @@
-import {Runtime} from "./runtime";
-import {tryCatch,errorObj} from "./util"
 import * as Promise from "bluebird"
+import {tryCatch, errorObj} from "./util"
+import {Runtime} from "./runtime"
+import {Message} from "./message"
+import * as symbols from "./symbols"
 
 export class Spawnable{
+  private _iter:IterableIterator<Promise<any>>
+  private _runtime: Runtime
+  private _yielding: Symbol = symbols.init
+  private _yieldedPromise: Promise<any>
+  private _name:string
+  private _mailbox = []
 
-  public name:string
-  public get path():string{
-    return this._runtime.id + "/" + this.name;
-  }
-
-  public constructor(runtime:Runtime,iter:IterableIterator<Promise<any>>,name:string){
+  public constructor(runtime: Runtime, iter: IterableIterator<Promise<any>>, name: string) {
     this._runtime = runtime;
-    this.name = name;
     this._iter = iter;
+    this._name = name;
   }
 
-  public _continue(){
+  public get name(): string {
+    return this._name
+  }
+
+  _continue() {
     let result;
-    if(!this._yieldedPromise){
-      result = tryCatch(this._iter.next,this._iter)
-    }
-    else{
-      result = this._getResult()
+    switch (this._yielding) {
+      case symbols.init:
+        result = tryCatch(this._iter.next, this._iter)
+        if (result == errorObj) {
+          this._cleanup(result.e);
+          return
+        }
+        break;
+      case symbols.message:
+        break;
+      case symbols.context:
+        break;
+      case symbols.promise:
+        result = this._getResult()
     }
 
-    if(result == errorObj){
-      this._cleanup(result.e);
-      return
-    }
-
-    if(result.done){
+    if (result.done) {
       this._cleanup(null)
       return;
     }
 
-    let promise = this._yieldedPromise = <Promise<any>>result.value;
-    if(!promise.isPending()){
-      this._runtime._ready(this);
-    }
-    else{
-      promise.then(()=>{
+    switch (result.value) {
+      case symbols.message:
+        this._yielding = symbols.message;
+        if (this._mailbox.length > 0) {
+          this._runtime._ready(this);
+        }
+        break;
+      case symbols.context:
+        this._yielding = symbols.context;
         this._runtime._ready(this);
-      })
+        break;
+      default:
+        if (result.value instanceof Promise) {
+          this._yielding = symbols.promise;
+          this._yieldedPromise = result.value;
+          if (!result.value.isPending()) {
+            this._runtime._ready(this);
+          }
+          else {
+            result.value.then(() => {
+              this._runtime._ready(this);
+            })
+          }
+        }
     }
   }
 
-  private _iter:IterableIterator<Promise<any>>
-  private _runtime:Runtime
-  private _yieldedPromise:Promise<any>
-  private _mailbox = new Set<any>()
-
   private _getResult(){
     let iterable = this._iter;
-    let yielded = this._yieldedPromise;
+    let promise = this._yieldedPromise;
     this._yieldedPromise = null;
-    if(yielded.isFulfilled()){
-      return tryCatch(iterable.next,iterable,[yielded.value()])
+    if (promise.isFulfilled()){
+      return tryCatch(iterable.next, iterable, [promise.value()])
     }
-    else if(yielded.isRejected()){
-      return tryCatch(iterable.throw,iterable,[yielded.reason()])
+    else if (promise.isRejected()){
+      return tryCatch(iterable.throw, iterable, [promise.reason()])
     }
     else{ // yielded.cancaled() not support yet
       return tryCatch(iterable.throw,iterable,[new Error("Cancel not support yet")]);
@@ -67,5 +89,12 @@ export class Spawnable{
 
   private _cleanup(reason:Error){
     this._runtime._exit(this);
+  }
+
+  _receive(msg: Message) {
+    this._mailbox.push(msg)
+    if (this._yielding == symbols.message) {
+      this._runtime._ready(this)
+    }
   }
 }

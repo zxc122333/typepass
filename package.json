@@ -1,32 +1,30 @@
 {
   "name": "typepass",
   "version": "0.0.0",
-  "description": "",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
+  "description": "typepass",
+  "main": "dist/index.js",
+  "author": {
+    "name": "sqh",
+    "email": "admin@sqhong.com"
   },
   "scripts": {
     "test": "node --harmony dist/test/runtime.js"
   },
   "keywords": [
     "actor",
-    "erlang",
-    "scala",
-    "akka"
+    "TypeScript"
   ],
-  "author": "sqhong",
   "license": "MIT",
   "dependencies": {
-    "bluebird": "^3.1.1",
+    "bluebird": "^3.3.4",
     "fast-url-parser": "^1.1.3",
     "fastqueue": "^0.1.0",
-    "lodash": "^3.10.1",
+    "lodash": "^4.6.1",
     "node-uuid": "^1.4.7"
   },
   "devDependencies": {
-    "benchmark": "^2.0.0",
-    "mocha": "^2.3.4",
-    "should": "^8.1.1"
+    "benchmark": "^2.1.0",
+    "mocha": "^2.4.5",
+    "should": "8.2.2"
   }
 }

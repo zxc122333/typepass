@@ -2,7 +2,7 @@
 
 import * as typepass from "../lib/runtime"
 import * as Promise from "bluebird"
-let runtime = new typepass.Runtime(new typepass.RuntimeConfigure("","",123))
+let runtime = new typepass.Runtime({})
 
 function sleep(ms:number){
   return new Promise((resolve)=>{

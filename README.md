@@ -1,4 +1,3 @@
-#zero-cluster
+﻿# typepass
 
-## uri-schema :
-zero-tcp://host:port/socket
+

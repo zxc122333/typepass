@@ -1,7 +1,7 @@
 "use strict";
 const typepass = require("../lib/runtime");
 const Promise = require("bluebird");
-let runtime = new typepass.Runtime(new typepass.RuntimeConfigure("", "", 123));
+let runtime = new typepass.Runtime({});
 function sleep(ms) {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);

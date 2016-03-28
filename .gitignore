@@ -28,3 +28,6 @@ node_modules
 
 # unfinished
 benchmark
+.ntvs_analysis.dat
+bin/
+obj/
