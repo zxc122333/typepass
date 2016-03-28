@@ -33,6 +33,8 @@ export class Spawnable{
         }
         break;
       case symbols.message:
+        let msg = this._mailbox.pop();
+        result = tryCatch(this._iter.next, this._iter,[msg])
         break;
       case symbols.context:
         break;
